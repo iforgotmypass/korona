@@ -2,12 +2,15 @@ import requests
 import json
 import csv
 import datetime
-import schedule
 import time
+import pandas as pd
 from bs4 import BeautifulSoup
+
+
 
 def sprawdz():
     dzis = datetime.datetime.now().strftime('%d-%m-%y')
+    teraz = datetime.datetime.now().strftime('%d-%m-%y godz. %H:%M')
     strona = requests.get('https://www.gov.pl/web/koronawirus/wykaz-zarazen-koronawirusem-sars-cov-2')
     soup = BeautifulSoup(strona.content, 'html.parser')
     lista = json.loads(soup.find(id='registerData').get_text())
@@ -18,12 +21,13 @@ def sprawdz():
             try:
                 x.pop()
             except:
-                print('Lista pusta')
+                continue
             dzisiaj.writerow(x)
-    print(f'Aktualizacja godz. 20:00 {dzis}')
-
-schedule.every().day.at('20:00').do(sprawdz)
+    data = pd.read_csv(f'{dzis}.csv')
+    print(data.sort_values('Liczba', ascending=False))
+    print("Suma:",data.sum()['Liczba'],"| Suma zgonów:",int(data.sum()['Liczba zgonów']))
+    print(f'Aktualizacja {teraz}')
 
 while True:
-    schedule.run_pending()
-    time.sleep(1)
+    sprawdz()
+    time.sleep(60)
